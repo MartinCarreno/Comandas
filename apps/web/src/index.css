@@ -1,41 +1,41 @@
 /* apps/web/src/index.css */
 
-/* Fuente base y modo oscuro */
 :root {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  /* Paleta Minimalista (Slate / Gray) */
+  --bg-body: #f8fafc;       /* Fondo gris muy claro */
+  --bg-card: #ffffff;       /* Fondo blanco puro */
+  --text-main: #0f172a;     /* Negro azulado para títulos */
+  --text-muted: #64748b;    /* Gris medio para subtítulos */
+  --border-color: #e2e8f0;  /* Bordes muy sutiles */
+  
+  --primary: #0f172a;       /* Botón primario (Negro sólido) */
+  --primary-hover: #334155;
+  
+  --accent: #3b82f6;        /* Azul suave para focos/detalles */
+  --danger: #ef4444;
+
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  color-scheme: dark;
+  
+ 
+  color-scheme: light;
+  color: var(--text-main);
+  background-color: var(--bg-body);
 }
 
-/* Box-sizing consistente */
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
-/* HTML y body ocupan toda la pantalla */
-html,
-body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
-}
-
-/* El root de React también ocupa toda la pantalla */
-#root {
+html, body, #root {
   height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
+  -webkit-font-smoothing: antialiased; /* Texto más nítido */
 }
 
-/* Quitamos márgenes por defecto en headings y párrafos */
-h1,
-h2,
-h3,
-p {
+h1, h2, h3, p {
   margin: 0;
 }

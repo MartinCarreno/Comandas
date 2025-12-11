@@ -3,18 +3,36 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from './api';
 import { useState } from 'react';
 import { clearTokens, getRefreshToken } from './authStorage';
+import { MesaDashboard } from './components/MesaDashboard';
+
 import './App.css';
 
-type Producto = {
+export type Producto = {
   id: string;
   nombre: string;
   description?: string | null;
   tipo: 'BEBESTIBLE' | 'COMESTIBLE';
+  precio: number; // Agregado precio
   dueDate?: string | null;
+  activo: boolean;
 };
 
-type AdminProducto= Producto & {
-  userId: string;
+export type Mesa = {
+  id: string;
+  numeroMesa: number;
+  capacidad?: number;
+  usada: boolean;
+  posX: number;
+  posY: number;
+};
+
+// Si necesitas mostrar historial de comandas luego, usaremos este type
+export type Comanda = {
+  id: string;
+  mesaId: string;
+  estado: 'PENDIENTE' | 'EN_PREPARACION' | 'ENTREGADO' | 'PAGADO';
+  total: number;
+  detalles: any[]; // Se puede detallar más si es necesario
 };
 
 type Me = {
@@ -22,9 +40,10 @@ type Me = {
   email: string;
   role?: 'USER' | 'ADMIN';
 };
-
 export default function App({ onLogout }: { onLogout: () => void }) {
   const qc = useQueryClient();
+
+
 
   // --- QUIÉN SOY (JWT /auth/me) ---
   const { data: me, isLoading: meLoading, error: meError } = useQuery<Me>({
@@ -43,29 +62,22 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     enabled: !!me,
   });
 
-  // --- TODAS LAS TAREAS (SOLO ADMIN) ---
-  const {
-    data: adminProductos,
-    isLoading: adminLoading,
-    error: adminError,
-  } = useQuery<AdminProducto[]>({
-    queryKey: ['producto-admin'],
-    queryFn: async () => (await api.get('/producto/admin/all')).data,
-    enabled: !!me && me.role === 'ADMIN',
-  });
 
-  // Estado para CREAR tareas
+
+  // Estado para CREAR productos
   const [nombre, setNombre] = useState('');
   const [description, setDescription] = useState('');
   const [tipo, setTipo] = useState<'BEBESTIBLE' | 'COMESTIBLE'>('BEBESTIBLE');
   const [dueDate, setDueDate] = useState('');
+  const [precio, setPrecio] = useState(0);
 
-  // Estado para EDITAR tareas del usuario
+  // Estado para EDITAR productos del usuario
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingNombre, setEditingNombre] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
   const [editingTipo, setEditingTipo] = useState<'BEBESTIBLE' | 'COMESTIBLE'>('BEBESTIBLE');
   const [editingDueDate, setEditingDueDate] = useState('');
+  const [editingPrecio, setEditingPrecio] = useState(0);
 
   const create = useMutation({
     mutationFn: async () =>
@@ -74,12 +86,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
         description: description.trim() || undefined,
         tipo,
         dueDate: dueDate || undefined,
+        precio: precio || 0,
       }),
     onSuccess: () => {
       setNombre('');
       setDescription('');
       setTipo('BEBESTIBLE');
       setDueDate('');
+      setPrecio(0);
       qc.invalidateQueries({ queryKey: ['productos'] });
       qc.invalidateQueries({ queryKey: ['productos-admin'] });
     },
@@ -92,12 +106,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       description?: string;
       tipo: 'BEBESTIBLE' | 'COMESTIBLE';
       dueDate?: string;
+      precio?: number;
     }) =>
       api.patch(`/productos/${input.id}`, {
         nombre: input.nombre,
         description: input.description,
         tipo: input.tipo,
         dueDate: input.dueDate,
+        precio: input.precio,
       }),
     onSuccess: () => {
       setEditingId(null);
@@ -105,6 +121,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       setEditingDescription('');
       setEditingTipo('BEBESTIBLE');
       setEditingDueDate('');
+      setEditingPrecio(0);
       qc.invalidateQueries({ queryKey: ['productos'] });
       qc.invalidateQueries({ queryKey: ['productos-admin'] });
     },
@@ -136,6 +153,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setEditingDescription(producto.description ?? '');
     setEditingTipo(producto.tipo);
     setEditingDueDate(producto.dueDate ? producto.dueDate.slice(0, 10) : '');
+    setEditingPrecio(producto.precio || 0);
   };
 
   const cancelEdit = () => {
@@ -144,6 +162,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     setEditingDescription('');
     setEditingTipo('BEBESTIBLE');
     setEditingDueDate('');
+    setEditingPrecio(0);
   };
 
   const saveEdit = (id: string) => {
@@ -154,6 +173,7 @@ export default function App({ onLogout }: { onLogout: () => void }) {
       description: editingDescription.trim() || undefined,
       tipo: editingTipo,
       dueDate: editingDueDate || undefined,
+      precio: editingPrecio || 0,
     });
   };
 
@@ -163,12 +183,67 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     create.mutate();
   };
 
+  const {
+    data: mesas,
+    isLoading: mesasLoading,
+    error: mesasError,
+  } = useQuery<Mesa[]>({
+    queryKey: ['mesas'],
+    queryFn: async () => (await api.get('/mesas')).data,
+    enabled: !!me,
+  });
+
+  const { data: comandas, isLoading: comandasLoading } = useQuery<Comanda[]>({
+    queryKey: ['comandas'],
+    queryFn: async () => (await api.get('/comandas')).data,
+    enabled: !!me,
+  });
+
+  const crearComanda = useMutation({
+    mutationFn: async ({
+      mesaId,
+      detalles,
+    }: {
+      mesaId: string;
+      detalles: { productoId: string; cantidad: number }[];
+    }) =>
+      api.post('/comandas', {
+        mesaId,
+        detalles,
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comandas'] });
+      qc.invalidateQueries({ queryKey: ['mesas'] }); // <-- Agrega esto
+    },
+  });
+
+  const editarComanda = useMutation({
+    mutationFn: async ({ comandaId, detalles }: { comandaId: string; detalles: { productoId: string; cantidad: number }[] }) =>
+      api.patch(`/comandas/${comandaId}`, { detalles }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['comandas'] });
+      qc.invalidateQueries({ queryKey: ['mesas'] });
+    },
+  });
+
+  const cobrarMesa = useMutation({
+    mutationFn: async (mesaId: string) =>
+      api.patch(`/mesas/${mesaId}/liberar`, { usada: false }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['mesas'] });
+      // Puedes invalidar otras queries si lo necesitas
+    },
+  });
+
+
+
   // --- ESTADOS GLOBALES BÁSICOS ---
   if (meLoading) return <p>Cargando sesión...</p>;
   if (meError) return <p>Error cargando usuario. Vuelve a iniciar sesión.</p>;
 
   if (productosLoading) return <p>Cargando Productos...</p>;
   if (productosError) return <p>Error cargando Productos.</p>;
+
 
   return (
     <div className="app-shell app-shell--dashboard">
@@ -204,68 +279,32 @@ export default function App({ onLogout }: { onLogout: () => void }) {
 
         {/* MAIN: 2 COLUMNAS */}
         <div className="dashboard-main">
-          {/* PANEL IZQUIERDO: NUEVO PRODUCTO */}
-          <section className="card">
-            <h2 className="section-title">Nuevo Producto</h2>
-            <form className="form" onSubmit={handleCreateSubmit}>
-              <div className="field">
-                <label className="field-label">Nombre</label>
-                <input
-                  className="input"
-                  placeholder="Escribe el nombre del producto…"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                />
-              </div>
-
-              <div className="field">
-                <label className="field-label">Descripción</label>
-                <textarea
-                  className="textarea"
-                  placeholder="Detalle opcional del producto"
-                  value={description}
-                  rows={3}
-                  onChange={(e) => setDescription(e.target.value)}
-                />
-              </div>
-
-              <div className="producto-edit-row">
-                <div className="field">
-                  <label className="field-label">Tipo</label>
-                  <select
-                    className="input"
-                    value={tipo}
-                    onChange={(e) =>
-                      setTipo(e.target.value as 'BEBESTIBLE' | 'COMESTIBLE')
-                    }
-                  >
-                    <option value="BEBESTIBLE">Bebestible</option>
-                    <option value="COMESTIBLE">Comestible</option>
-                    
-                  </select>
-                </div>
-                <div className="field">
-                  <label className="field-label">Fecha Vencimiento</label>
-                  <input
-                    className="input"
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={!nombre.trim() || create.isPending}
-                >
-                  {create.isPending ? 'Creando…' : 'Crear Producto'}
-                </button>
-              </div>
-            </form>
-          </section>
+          {/* PANEL MESAS DASHBOARD */}
+          {mesasLoading ? (
+            <p>Cargando mesas...</p>
+          ) : mesasError ? (
+            <p>Error cargando mesas</p>
+          ) : mesas ? (
+            <MesaDashboard
+              mesas={mesas}
+              productos={productos || []}
+              comandas={comandas || []}
+              userRole={me?.role}
+              onEditarComanda={(comandaId, detalles) => editarComanda.mutate({ comandaId, detalles })}
+              onCrearComanda={(mesa, items) => {
+                crearComanda.mutate({
+                  mesaId: mesa.id,
+                  detalles: items.map((i) => ({
+                    productoId: i.producto.id,
+                    cantidad: i.cantidad,
+                  })),
+                });
+              }}
+              onCobrarMesa={(mesa) => {
+                cobrarMesa.mutate(mesa.id);
+              }}
+            />
+          ) : null}
 
           {/* PANEL DERECHO: TUS PRODUCTOS */}
           <section className="card">
@@ -320,13 +359,25 @@ export default function App({ onLogout }: { onLogout: () => void }) {
                               </select>
                             </div>
                             <div className="field">
-                              <label className="field-label">Fecha límite</label>
+                              <label className="field-label">Fecha Cambio</label>
                               <input
                                 className="input"
                                 type="date"
                                 value={editingDueDate}
                                 onChange={(e) =>
                                   setEditingDueDate(e.target.value)
+                                }
+                              />
+                            </div>
+                            <div className="field">
+                              <label className="field-label">Precio</label>
+                              <input
+                                min="0"
+                                className="input"
+                                type="number"
+                                value={editingPrecio}
+                                onChange={(e) =>
+                                  setEditingPrecio(Number(e.target.value))
                                 }
                               />
                             </div>
@@ -343,53 +394,37 @@ export default function App({ onLogout }: { onLogout: () => void }) {
                           <p className="producto-meta">
                             Tipo: {t.tipo}{' '}
                             {t.dueDate
-                              ? `· vence el ${new Date(
-                                  t.dueDate,
-                                ).toLocaleDateString()}`
-                              : ''}
+                              ? `· creado ${new Date(
+                                t.dueDate,
+                              ).toLocaleDateString()}`
+                              : ''}{' · '}
+                            Precio: ${t.precio}
                           </p>
                         </>
                       )}
                     </div>
 
                     <div className="producto-actions">
-                      {isEditing ? (
-                        <>
-                          <button
-                            className="btn btn-primary"
-                            type="button"
-                            disabled={update.isPending}
-                            onClick={() => saveEdit(t.id)}
-                          >
-                            Guardar
-                          </button>
-                          <button
-                            className="btn btn-ghost"
-                            type="button"
-                            onClick={cancelEdit}
-                            disabled={update.isPending}
-                          >
-                            Cancelar
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="btn btn-secondary"
-                            type="button"
-                            onClick={() => startEdit(t)}
-                          >
-                            Editar
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            type="button"
-                            disabled={remove.isPending}
-                            onClick={() => remove.mutate(t.id)}
-                          >
-                            Eliminar
-                          </button>
-                        </>
+                      {me?.role === 'ADMIN' && ( // Solo admin puede editar/eliminar
+                        isEditing ? (
+                          <>
+                            <button className="btn btn-primary" type="button" disabled={update.isPending} onClick={() => saveEdit(t.id)}>
+                              Guardar
+                            </button>
+                            <button className="btn btn-ghost" type="button" onClick={cancelEdit} disabled={update.isPending}>
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button className="btn btn-secondary" type="button" onClick={() => startEdit(t)}>
+                              Editar
+                            </button>
+                            <button className="btn btn-danger" type="button" disabled={remove.isPending} onClick={() => remove.mutate(t.id)}>
+                              Eliminar
+                            </button>
+                          </>
+                        )
                       )}
                     </div>
                   </li>
@@ -397,47 +432,90 @@ export default function App({ onLogout }: { onLogout: () => void }) {
               })}
             </ul>
           </section>
+
+          {/* PANEL IZQUIERDO: NUEVO PRODUCTO */}
+          {me?.role === 'ADMIN' && (
+            <section className="card">
+              <h2 className="section-title">Nuevo Producto</h2>
+              <form className="form" onSubmit={handleCreateSubmit}>
+                <div className="field">
+                  <label className="field-label">Nombre</label>
+                  <input
+                    className="input"
+                    placeholder="Escribe el nombre del producto…"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                  />
+                </div>
+
+                <div className="field">
+                  <label className="field-label">Descripción</label>
+                  <textarea
+                    className="textarea"
+
+                    placeholder="Detalle opcional del producto"
+                    value={description}
+                    rows={3}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </div>
+
+                <div className="producto-edit-row">
+                  <div className="field">
+                    <label className="field-label">Tipo</label>
+                    <select
+                      className="input"
+                      value={tipo}
+                      onChange={(e) =>
+                        setTipo(e.target.value as 'BEBESTIBLE' | 'COMESTIBLE')
+                      }
+                    >
+                      <option value="BEBESTIBLE">Bebestible</option>
+                      <option value="COMESTIBLE">Comestible</option>
+
+                    </select>
+                  </div>
+                  <div className="field">
+                    <label className="field-label">Fecha Creacion</label>
+                    <input
+                      className="input"
+                      type="date"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="field">
+                    <label className="field-label">Precio</label>
+                    <input
+                      min="0"
+                      className="input"
+                      type="number"
+                      value={precio}
+                      onChange={(e) => setPrecio(Number(e.target.value))}
+                    />
+                  </div>
+
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={!nombre.trim() || create.isPending}
+                  >
+                    {create.isPending ? 'Creando…' : 'Crear Producto'}
+                  </button>
+                </div>
+              </form>
+            </section>
+          )}
+
+
+
         </div>
 
-        {/* PANEL EXTRA: TODOS LOS PRODUCTOS (SOLO ADMIN, SOLO LECTURA) */}
-        {me?.role === 'ADMIN' && (
-          <section className="card">
-            <h2 className="section-title" style={{ marginBottom: 8 }}>
-              Todas las tareas (ADMIN)
-            </h2>
-            <p className="app-subtitle" style={{ marginTop: 0, marginBottom: 8 }}>
-              Vista global de tareas de todos los usuarios (solo lectura).
-            </p>
 
-            {adminLoading && <p>Cargando tareas globales…</p>}
-            {adminError && (
-              <p style={{ color: '#fecaca' }}>Error cargando tareas globales.</p>
-            )}
-
-            {!adminLoading && !adminError && (
-              <ul className="productos-list">
-                {adminProductos?.map((t) => (
-                  <li key={t.id} className="producto-item">
-                    <div className="producto-main">
-                      <p className="producto-title">{t.nombre}</p>
-                      {t.description && (
-                        <p className="producto-description">{t.description}</p>
-                      )}
-                      <p className="producto-meta">
-                        Usuario ID: {t.userId} · Tipo: {t.tipo}{' '}
-                        {t.dueDate
-                          ? `· vence el ${new Date(
-                              t.dueDate,
-                            ).toLocaleDateString()}`
-                          : ''}
-                      </p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
       </div>
     </div>
   );

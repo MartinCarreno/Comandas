@@ -1,79 +1,68 @@
 /* apps/web/src/App.css */
 
-/* ========== LAYOUT BASE ========== */
+/* ========== LAYOUT ========== */
 
-/* Fondo global */
 .app-shell {
   min-height: 100vh;
-  width: 100%;                     /* ocupa todo el ancho del viewport */
-  padding: 1.5rem;
-  background: radial-gradient(circle at top left, #1f2937 0, #020617 50%, #000 100%);
-  color: #e5e7eb;
-  box-sizing: border-box;
+  width: 100%;
+  padding: 2rem;
+  background-color: var(--bg-body);
+  color: var(--text-main);
 }
 
-/* Variante: Auth centrado */
-.app-shell--center,
-.app-shell--dashboard {
-  display: flex;
-}
-
-/* Login: tarjeta centrada en la pantalla */
+/* Centrado (Login) */
 .app-shell--center {
+  display: flex;
   justify-content: center;
   align-items: center;
 }
 
-/* productoBoard: modo dashboard full screen */
+/* Dashboard */
 .app-shell--dashboard {
-  justify-content: center;         /* centra el contenido horizontalmente */
-  align-items: stretch;            /* ocupa toda la altura disponible */
+  display: flex;
+  justify-content: center;
 }
 
-/* Contenedor interno del dashboard */
 .dashboard-layout {
   width: 100%;
-  max-width: 1200px;               /* se ve bien en cualquier laptop */
-  margin: 0 auto;                  /* siempre centrado */
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2rem;
 }
 
-/* Grid principal: panel de creación + lista de tareas */
 .dashboard-main {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: 374px 1fr; /* Panel lateral fijo + contenido */
+  gap: 2rem;
+  align-items: start;
 }
 
-/* Responsive: en pantallas estrechas pasa a 1 sola columna */
+
+
+/* Responsive */
 @media (max-width: 900px) {
-  .app-shell {
-    padding: 1rem;
-  }
-
-  .dashboard-main {
-    grid-template-columns: 1fr;
-  }
+  .app-shell { padding: 1rem; }
+  .dashboard-main { grid-template-columns: 1fr; }
 }
 
-/* ========== CARDS ========== */
+/* ========== S (Minimalista) ========== */
 
-/* Tarjetas reutilizables (Auth, encabezado, paneles) */
 .card {
-  width: 100%;
-  background: rgba(15, 23, 42, 0.95);
-  border-radius: 16px;
-  padding: 1.5rem 1.75rem;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.65);
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: var(--bg-card);
+  border-radius: 12px;         
+  padding: 1.5rem;
+  
+  /* Sombra muy sutil, estilo "elevación 1" */
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color);
 }
 
-/* Tarjeta de Auth más angosta */
 .auth-card {
-  max-width: 420px;
+  max-width: 400px;
+  width: 100%;
 }
 
 /* ========== HEADER ========== */
@@ -81,248 +70,235 @@
 .app-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
   margin-bottom: 0.5rem;
 }
 
 .app-title {
-  font-size: 1.875rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  letter-spacing: -0.03em;
-  margin: 0;
+  color: var(--text-main);
+  letter-spacing: -0.5px;
 }
 
 .app-subtitle {
-  margin: 0.25rem 0 0;
   font-size: 0.9rem;
-  color: #9ca3af;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
 }
 
 .user-info {
   font-size: 0.85rem;
-  color: #9ca3af;
-  margin-top: 0.5rem;
-}
-
-/* Títulos de secciones internas ("Nueva tarea", "Tus tareas") */
-.section-title {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #e5e7eb;
-}
-
-/* Badge de rol */
-.badge-role {
-  display: inline-flex;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  display: flex;
   align-items: center;
-  padding: 0.125rem 0.5rem;
-  margin-left: 0.4rem;
-  border-radius: 999px;
+  gap: 0.5rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text-main);
+  border-bottom: 1px solid transparent;
+}
+
+/* Badges (Etiquetas) */
+.badge-role {
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: rgba(55, 65, 81, 0.8);
-  color: #e5e7eb;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
 }
 
 .badge-role.admin {
-  background: rgba(16, 185, 129, 0.14);
-  color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.5);
+  background: #ecfdf5;
+  color: #059669; /* Verde esmeralda */
+  border-color: #a7f3d0;
 }
 
-/* ========== BOTONES ========== */
+.badge-type {
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-type.bebestible { background: #e0f2fe; color: #0284c7; }
+.badge-type.comestible { background: #ffedd5; color: #c2410c; }
+
+
+/* ========== BUTTONS ========== */
 
 .btn {
-  border: none;
-  border-radius: 999px;
-  padding: 0.5rem 0.9rem;
-  font-size: 0.85rem;
+  border: 1px solid transparent;
+  border-radius: 8px; /* Menos redondo que antes */
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
-  transition:
-    background 0.15s ease,
-    transform 0.05s ease,
-    box-shadow 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .btn:disabled {
-  opacity: 0.6;
-  cursor: default;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+/* Primario: Negro sólido */
 .btn-primary {
-  background: linear-gradient(to right, #6366f1, #8b5cf6);
+  background: var(--primary);
   color: white;
-  box-shadow: 0 12px 30px rgba(79, 70, 229, 0.45);
 }
-
 .btn-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
   transform: translateY(-1px);
-  box-shadow: 0 16px 40px rgba(79, 70, 229, 0.6);
 }
 
+/* Secundario: Blanco con borde */
 .btn-secondary {
-  background: rgba(31, 41, 55, 0.9);
-  color: #e5e7eb;
+  background: white;
+  color: var(--text-main);
+  border-color: var(--border-color);
 }
-
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(55, 65, 81, 0.95);
+  background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
+/* Ghost: Sin fondo */
 .btn-ghost {
   background: transparent;
-  color: #9ca3af;
+  color: var(--text-muted);
+}
+.btn-ghost:hover {
+  background: #f1f5f9;
+  color: var(--text-main);
 }
 
-.btn-ghost:hover:not(:disabled) {
-  background: rgba(31, 41, 55, 0.65);
-}
-
+/* Danger: Rojo suave */
 .btn-danger {
-  background: rgba(239, 68, 68, 0.12);
-  color: #fecaca;
+  background: #fef2f2;
+  color: var(--danger);
+  border-color: #fecaca;
+}
+.btn-danger:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
 }
 
-.btn-danger:hover:not(:disabled) {
-  background: rgba(239, 68, 68, 0.22);
-}
-
-/* ========== FORMULARIOS ========== */
+/* ========== FORMS ========== */
 
 .form {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  gap: 1rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 
 .field-label {
-  font-size: 0.8rem;
-  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-main);
 }
 
-/* Input tipo pill */
-.input {
-  border-radius: 999px;
-  border: 1px solid rgba(75, 85, 99, 0.8);
-  background: rgba(15, 23, 42, 0.9);
-  padding: 0.5rem 0.9rem;
-  font-size: 0.9rem;
-  color: #e5e7eb;
-  outline: none;
-}
-
-.input::placeholder {
-  color: #6b7280;
-}
-
-.input:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.6);
-}
-
-/* Textarea con estética consistente */
 .textarea {
-  border-radius: 12px;
-  border: 1px solid rgba(75, 85, 99, 0.8);
-  background: rgba(15, 23, 42, 0.9);
-  padding: 0.55rem 0.9rem;
-  font-size: 0.9rem;
-  color: #e5e7eb;
-  outline: none;
+  
+  
   resize: vertical;
-  min-height: 56px;
 }
 
-.textarea::placeholder {
-  color: #6b7280;
+.input,.textarea, select.input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: #fff;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s;
 }
 
-.textarea:focus {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.6);
+.input:focus, .textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Fila para agrupar prioridad + fecha (crear y editar) */
 .producto-edit-row {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
-/* ========== LISTA DE TAREAS ========== */
+/* ========== LISTA ========== */
 
 .productos-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid rgba(55, 65, 81, 0.9);
 }
 
 .producto-item {
   display: flex;
-  align-items: flex-start;
   justify-content: space-between;
-  padding: 0.75rem 0;
-  border-bottom: 1px solid rgba(31, 41, 55, 0.9);
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.producto-item:last-child {
+  border-bottom: none;
 }
 
 .producto-main {
-  flex: 1;
-  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .producto-title {
-  margin: 0;
-  font-size: 0.95rem;
   font-weight: 500;
-  color: #e5e7eb;
+  color: var(--text-main);
 }
 
-/* Descripción de la tarea (modo lectura) */
 .producto-description {
-  margin: 0.2rem 0 0;
   font-size: 0.85rem;
-  color: #d1d5db;
+  color: var(--text-muted);
 }
 
-.producto-meta {
-  margin-top: 0.15rem;
-  font-size: 0.78rem;
-  color: #6b7280;
-}
-
-/* Formulario de edición inline dentro del item */
-.producto-edit {
+.producto-actions {
   display: flex;
-  flex-direction: column;
   gap: 0.5rem;
 }
 
-/* Acciones de cada tarea */
-.producto-actions {
-  display: flex;
-  gap: 0.4rem;
-  margin-left: 0.75rem;
-  flex-shrink: 0;
+/* Ajustes para el editor inline */
+.producto-edit {
+  width: 100%;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
 }
 
-/* ========== ERRORES AUTH ========== */
-
-.error-text {
-  color: #fecaca;
-  font-size: 0.82rem;
-}
+.mb-2 { margin-bottom: 0.5rem; }
+.flex { display: flex; }
+.gap-2 { gap: 0.5rem; }
