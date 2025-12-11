@@ -9,14 +9,19 @@ type Props = {
     onCrearComanda: (mesa: Mesa, items: { producto: Producto; cantidad: number }[]) => void;
     onEditarComanda: (comandaId: string, detalles: { productoId: string; cantidad: number }[]) => void;
     onCobrarMesa: (mesa: Mesa) => void;
+    onAddMesa?: (numeroMesa: number, capacidad?: number) => void; // <-- nuevo prop
 };
 
-export function MesaDashboard({ mesas, productos, comandas, onCrearComanda, onEditarComanda, onCobrarMesa }: Props) {
+export function MesaDashboard({ mesas, productos, comandas, userRole, onCrearComanda, onEditarComanda, onCobrarMesa, onAddMesa }: Props) {
     const [selectedMesa, setSelectedMesa] = useState<Mesa | null>(null);
     const [modalOpen, setModalOpen] = useState(false);
     const [selectedItems, setSelectedItems] = useState<{ [id: string]: number }>({});
     const [modalStep, setModalStep] = useState<'acciones' | 'comanda' | 'cobro' | 'editar'>('acciones');
     const [editingItems, setEditingItems] = useState<{ [id: string]: number }>({});
+    const [addMesaOpen, setAddMesaOpen] = useState(false);
+    const [nuevoNumero, setNuevoNumero] = useState<number | ''>('');
+    const [nuevaCapacidad, setNuevaCapacidad] = useState<number | ''>('');
+
 
     const openModal = (mesa: Mesa) => {
         setSelectedMesa(mesa);
@@ -80,6 +85,28 @@ export function MesaDashboard({ mesas, productos, comandas, onCrearComanda, onEd
         }
     };
 
+    const handleAddMesa = () => {
+        setAddMesaOpen(true);
+    };
+
+    
+    const handleAddMesaSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!onAddMesa || userRole !== 'ADMIN') return;
+        if (typeof nuevoNumero !== 'number' || isNaN(nuevoNumero) || nuevoNumero <= 0) {
+            alert('Número de mesa inválido');
+            return;
+        }
+        if (nuevaCapacidad !== '' && (typeof nuevaCapacidad !== 'number' || isNaN(nuevaCapacidad) || nuevaCapacidad <= 0)) {
+            alert('Capacidad inválida');
+            return;
+        }
+        onAddMesa(nuevoNumero, nuevaCapacidad === '' ? undefined : nuevaCapacidad);
+        setAddMesaOpen(false);
+        setNuevoNumero('');
+        setNuevaCapacidad('');
+    };
+
     // Cuando se entra a editar, precarga los productos actuales
     const startEditarComanda = () => {
         if (!comandaActiva) return;
@@ -107,7 +134,14 @@ export function MesaDashboard({ mesas, productos, comandas, onCrearComanda, onEd
 
     return (
         <section className="card">
-            <h2 className="section-title">Mesas</h2>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h2 className="section-title">Mesas</h2>
+                {userRole === 'ADMIN' && (
+                    <button className="btn btn-primary" onClick={handleAddMesa}>
+                        Agregar mesa
+                    </button>
+                )}
+            </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                 {mesas.map((mesa) => (
                     <div
@@ -140,6 +174,44 @@ export function MesaDashboard({ mesas, productos, comandas, onCrearComanda, onEd
                     </div>
                 ))}
             </div>
+            
+            {addMesaOpen && (
+                <div className="modal-backdrop" style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div className="modal" style={{
+                        background: '#fff', borderRadius: 8, padding: 24, minWidth: 320, maxWidth: 400, boxShadow: '0 2px 16px #0002'
+                    }}>
+                        <h3>Agregar nueva mesa</h3>
+                        <form onSubmit={handleAddMesaSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <label>
+                                Número de mesa:
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={nuevoNumero}
+                                    onChange={e => setNuevoNumero(e.target.value === '' ? '' : Number(e.target.value))}
+                                    required
+                                />
+                            </label>
+                            <label>
+                                Capacidad (opcional):
+                                <input
+                                    type="number"
+                                    min={1}
+                                    value={nuevaCapacidad}
+                                    onChange={e => setNuevaCapacidad(e.target.value === '' ? '' : Number(e.target.value))}
+                                />
+                            </label>
+                            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                                <button type="button" className="btn btn-secondary" onClick={() => setAddMesaOpen(false)}>Cancelar</button>
+                                <button type="submit" className="btn btn-primary">Agregar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
 
             {modalOpen && selectedMesa && (
                 <div className="modal-backdrop" style={{

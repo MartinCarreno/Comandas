@@ -5,6 +5,20 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   timeout: 10_000,
 });
+export async function post(url: string, data: any) {
+  const token = localStorage.getItem('access_token'); // o desde tu authStorage
+  return fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+  }).then(res => {
+    if (!res.ok) throw new Error('Error en la petición');
+    return res.json();
+  });
+}
 
 // Interceptor de REQUEST: agrega Authorization: Bearer <access_token> si existe.
 api.interceptors.request.use((config) => {

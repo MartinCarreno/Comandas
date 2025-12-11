@@ -235,6 +235,12 @@ export default function App({ onLogout }: { onLogout: () => void }) {
     },
   });
 
+  const handleAddMesa = async (numeroMesa: number, capacidad?: number) => {
+  // Llama a tu API para crear la mesa
+  await api.post('/mesas', { numeroMesa, capacidad });
+  // Actualiza la lista de mesas
+  qc.invalidateQueries({ queryKey: ['mesas'] });
+};
 
 
   // --- ESTADOS GLOBALES BÁSICOS ---
@@ -303,13 +309,14 @@ export default function App({ onLogout }: { onLogout: () => void }) {
               onCobrarMesa={(mesa) => {
                 cobrarMesa.mutate(mesa.id);
               }}
+              onAddMesa={handleAddMesa}
             />
           ) : null}
 
           {/* PANEL DERECHO: TUS PRODUCTOS */}
           <section className="card">
             <h2 className="section-title" style={{ marginBottom: 8 }}>
-              Tus Productos
+              Menú
             </h2>
             <ul className="productos-list">
               {productos?.map((t) => {
