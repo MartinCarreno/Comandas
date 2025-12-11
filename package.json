@@ -18,5 +18,8 @@
   },
   "dependencies": {
     "@prisma/client": "6.18.0"
+  },
+  "prisma": {
+    "schema": "./apps/api/prisma/schema.prisma"
   }
 }
